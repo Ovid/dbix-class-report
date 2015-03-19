@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 BEGIN {
     $ENV{SCHEMA_LOADER_BACKCOMPAT} = 1;
-    $ENV{DBIC_TRACE}               = 1;
+#    $ENV{DBIC_TRACE}               = 1;
 }
 
 use strict;
@@ -19,8 +19,13 @@ my ( $fh, $filename )
 my $dsn = "dbi:SQLite:dbname=$filename";
 my $dbh = DBI->connect(
     $dsn, "", "",
-    { RaiseError => 1, AutoCommit => 1 }
+    {   RaiseError                 => 1,
+        AutoCommit                 => 1,
+        sqlite_see_if_its_a_number => 1
+        , # :( https://metacpan.org/pod/DBD::SQLite#Functions-And-Bind-Parameters ,
+    }
 );
+
 load_database($dbh);
 
 make_schema_at(
@@ -63,7 +68,6 @@ my $sales_per_customers = DBIx::Class::Report->new(
 
 my $resultset = $sales_per_customers->fetch(2);
 
-explain 0 + $dbh;
 is 0 + $dbh, 0 + $resultset->result_source->storage->dbh,
   'We should be sharing the same database handle';
 
@@ -71,6 +75,10 @@ is $resultset->count, 2,
   'We should have two matching records from our resultset';
 
 done_testing;
+
+#
+# End of tests
+#
 
 sub load_database {
     $dbh->do(<<'SQL');
