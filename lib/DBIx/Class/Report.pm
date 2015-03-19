@@ -3,6 +3,9 @@ package DBIx::Class::Report;
 use Moose;
 use Carp;
 use Digest::MD5 qw/md5_hex/;
+use namespace::autoclean;
+
+our $VERSION = '0.01';
 
 has 'columns' => (
     is       => 'ro',
@@ -30,29 +33,26 @@ sub BUILD {
     my $self         = shift;
     my $schema_class = ref $self->schema;   # XXX There has to be a better way
 
-    my $md5         = md5_hex( $self->sql );
-    my $columns     = join ', ' => map {"'$_'"} @{ $self->columns };
-    my $table       = "table_$md5";
-    my $source_name = "View$md5";
-    my $view_class  = $schema_class . "::$source_name";
+    my $md5             = md5_hex( $self->sql );
+    my $table           = "table_$md5";
+    my $source_name     = "View$md5";
+    my $view_class      = $schema_class . "::$source_name";
 
     # XXX Again, I'll figure out something better after this hack
     eval <<"END_VIEW";
 package $view_class;
 use base 'DBIx::Class::Core';
-$view_class->table_class('DBIx::Class::ResultSource::View');
-$view_class->table("$table");
-$view_class->add_columns($columns);
-$view_class->result_source_instance->is_virtual(1);
-$view_class->result_source_instance->view_definition(<<'END_SQL');
-@{[$self->sql]}
-END_SQL
 END_VIEW
     croak $@ if $@;
 
+    $view_class->table_class('DBIx::Class::ResultSource::View');
+    $view_class->table($table);
+    $view_class->add_columns( @{ $self->columns } );
+    $view_class->result_source_instance->is_virtual(1);
+    $view_class->result_source_instance->view_definition( $self->sql );
+
     $self->schema->register_class( $source_name => $view_class );
-    $self->_resultset( $self->schema->resultset($source_name) )
-      ;    #->search({}, {bind => [2]})
+    $self->_resultset($self->schema->resultset($source_name));
 }
 
 sub fetch {
@@ -60,49 +60,65 @@ sub fetch {
     return $self->_resultset->search( {}, { bind => [@bind_params] } );
 }
 
-our $VERSION = '0.01';
+__PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-DBIx::Class::Report - The great new DBIx::Class::Report!
+DBIx::Class::Report - Ad-Hoc reporting from DBIx::Class
 
 =head1 VERSION
 
 Version 0.01
 
-=cut
-
 =head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
 
     use DBIx::Class::Report;
 
-    my $foo = DBIx::Class::Report->new();
-    ...
+    my $report = DBIx::Class::Report->new(
+        schema  => $dbic_schema_object,
+        sql     => $complicated_sql,
+        columns => \@accessor_names,
+    );
+    my $resultset = $report->fetch(@bind_params_for_complicated_sql);
+    while ( my $result = $resultset->next ) {
+        # use like a normal dbic result, but it's read only
+    }
 
-=head1 EXPORT
+=head1 DESCRIPTION
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+B<NOTE:> Experimental ALPHA code.
 
-=head1 SUBROUTINES/METHODS
+Sometimes it's nice to be able to run ad-hoc SQL and get back a L<DBIx::Class>
+resultset. We can use L<DBIx::Class::ResultSource::View>, but that requires we
+hard-code our SQL ahead of time. C<DBIx::Class::Report> allows you to create
+your SQL on the fly and generate ad-hoc, read-only dbic resultsets which act
+just like normal dbic objects.
 
-=head2 function1
+    my $sql = <<'SQL';
+    SELECT var.name, ce.event_type, count(*)
+      FROM tracking_conversion_event ce
+      JOIN tracking_visitor visitor      ON visitor.tracking_visitor_id      = ce.tracking_visitor_id
+      JOIN tracking_version_variant curr ON curr.tracking_version_variant_id = visitor.tracking_version_variant_id
+      JOIN tracking_version ver          ON ver.tracking_version_id          = curr.tracking_version_id
+      JOIN tracking_variant var          ON var.tracking_variant_id          = curr.tracking_variant_id
+     WHERE ver.tracking_id = ?
+       AND ver.version     = ?
+ GROUP BY 1, 2
+ SQL
 
-=cut
+ my $events_per_name = DBIx::Class::Report->new(
+    schema  => $schema,
+    sql     => $sql,
+    columns => [qw/name event_type total/],
+ );
 
-sub function1 {
-}
+ my $resultset = $events_per_name->fetch( $tracking_id, $version );
 
-=head2 function2
-
-=cut
-
-sub function2 {
-}
+ while ( my $result = $resultset->next ) {
+    say $result->name;
+    say $result->event_type;
+    say $result->total;
+ }
 
 =head1 AUTHOR
 
