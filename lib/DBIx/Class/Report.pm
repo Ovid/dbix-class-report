@@ -16,11 +16,6 @@ has 'sql' => (
     required => 1,
 );
 
-has 'bind_params' => (
-    is       => 'ro',
-    isa      => 'Int',
-    required => 1,
-);
 has 'schema' => (
     is       => 'ro',
     isa      => 'DBIx::Class::Schema',
@@ -53,8 +48,6 @@ END_VIEW
     $view_class->resultset_class($resultset_class);
     $view_class->table($table);
     $view_class->add_columns( @{ $self->columns } );
-
-    # is_virtual allows us to use bind parameters
     $view_class->result_source_instance->is_virtual(1);
     $view_class->result_source_instance->view_definition( $self->sql );
     $view_class->meta->make_immutable;
@@ -62,10 +55,6 @@ END_VIEW
 
 sub fetch {
     my ( $self, @bind_params ) = @_;
-    unless ( $self->bind_params == @bind_params ) {
-        my $num_params = @bind_params;
-        croak("@{[$self->bind_params]} needed, but $num_params passed");
-    }
 }
 
 our $VERSION = '0.01';

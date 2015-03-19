@@ -46,10 +46,9 @@ SQL
 
 my $schema = Sample::DBIx::Class->connect( sub {$dbh} );
 my $sales_per_customers = DBIx::Class::Report->new(
-    columns     => [qw/name total_orders/],
-    sql         => $report_sql,
-    bind_params => 1,
-    schema      => $schema,
+    columns => [qw/name total_orders/],
+    sql     => $report_sql,
+    schema  => $schema,
 );
 #my $customer_rs = $schema->resultset('Customers');
 #while ( my $customer = $customer_rs->next ) {
@@ -57,30 +56,8 @@ my $sales_per_customers = DBIx::Class::Report->new(
 #}
 
 my $resultset = $sales_per_customers->fetch(2);
-#
-done_testing;
 
-#Sample::DBIx::Class::Customers->table("customers");
-#Sample::DBIx::Class::Customers->add_columns(
-#  "customer_id",
-#  { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
-#  "name",
-#  { data_type => "text", is_nullable => 0 },
-#  "age",
-#  { data_type => "integer", is_nullable => 0 },
-#);
-#Sample::DBIx::Class::Customers->set_primary_key("customer_id");
-#Sample::DBIx::Class::Orders->table("orders");
-#Sample::DBIx::Class::Orders->add_columns(
-#  "order_id",
-#  { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
-#  "customer_id",
-#  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-#);
-#Sample::DBIx::Class::Orders->set_primary_key("order_id");
-#Sample::DBIx::Class::Customers->has_many(
-#  "orders",
-#  "Sample::DBIx::Class::Orde
+done_testing;
 
 sub load_database {
     $dbh->do(<<'SQL');
