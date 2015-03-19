@@ -9,7 +9,8 @@ use DBIx::Class::Schema::Loader 'make_schema_at';
 use Test::Most;
 
 # EXLOCK prevents locking under OS X
-my ( $fh, $filename ) = tempfile( 'dbic_reportXXXX', EXLOCK => 0 );
+my ( $fh, $filename )
+  = tempfile( 'dbic_reportXXXX', EXLOCK => 0, UNLINK => 1 );
 
 my $dsn = "dbi:SQLite:dbname=$filename";
 my $dbh = DBI->connect(
@@ -50,6 +51,7 @@ my $sales_per_customers = DBIx::Class::Report->new(
     sql     => $report_sql,
     schema  => $schema,
 );
+
 #my $customer_rs = $schema->resultset('Customers');
 #while ( my $customer = $customer_rs->next ) {
 #    diag $customer->name;
