@@ -2,8 +2,6 @@ DBIx-Class-Report
 
 Create arbitrary DBIx::Class resultsets on the fly.
 
-Note that this doesn't work yet. This is here so I can share it.
-
 DESCRIPTION
 
 Throw arbitrary SQL at DBIx::Class and get a resultset back.
