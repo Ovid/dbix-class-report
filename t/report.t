@@ -1,4 +1,8 @@
 #!/usr/bin/env perl
+BEGIN {
+    $ENV{SCHEMA_LOADER_BACKCOMPAT} = 1;
+    $ENV{DBIC_TRACE}               = 1;
+}
 
 use strict;
 use warnings;
@@ -58,7 +62,13 @@ my $sales_per_customers = DBIx::Class::Report->new(
 #}
 
 my $resultset = $sales_per_customers->fetch(2);
-is $resultset->count, 2, 'We should have two matching records from our resultset';
+
+explain 0 + $dbh;
+is 0 + $dbh, 0 + $resultset->result_source->storage->dbh,
+  'We should be sharing the same database handle';
+
+is $resultset->count, 2,
+  'We should have two matching records from our resultset';
 
 done_testing;
 
