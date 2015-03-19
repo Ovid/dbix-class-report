@@ -30,31 +30,34 @@ sub BUILD {
     my $self         = shift;
     my $schema_class = ref $self->schema;   # XXX There has to be a better way
 
-    my $md5             = md5_hex( $self->sql );
-    my $table           = "table_$md5";
-    my $source_name     = "View$md5";
-    my $view_class      = $schema_class . "::$source_name";
-    my $resultset_class = $schema_class . "::ResultSet::$source_name";
+    my $md5         = md5_hex( $self->sql );
+    my $columns     = join ', ' => map {"'$_'"} @{ $self->columns };
+    my $table       = "table_$md5";
+    my $source_name = "View$md5";
+    my $view_class  = $schema_class . "::$source_name";
 
     # XXX Again, I'll figure out something better after this hack
     eval <<"END_VIEW";
 package $view_class;
 use base 'DBIx::Class::Core';
+$view_class->table_class('DBIx::Class::ResultSource::View');
+$view_class->table("$table");
+$view_class->add_columns($columns);
+$view_class->result_source_instance->is_virtual(1);
+$view_class->result_source_instance->view_definition(<<'END_SQL');
+@{[$self->sql]}
+END_SQL
 END_VIEW
     croak $@ if $@;
-    $self->schema->register_class( $source_name => $view_class );
 
-    $view_class->table_class('DBIx::Class::ResultSource::View');
-    $view_class->resultset_class($resultset_class);
-    $view_class->table($table);
-    $view_class->add_columns( @{ $self->columns } );
-    $view_class->result_source_instance->is_virtual(1);
-    $view_class->result_source_instance->view_definition( $self->sql );
-    $view_class->meta->make_immutable;
+    $self->schema->register_class( $source_name => $view_class );
+    $self->_resultset( $self->schema->resultset($source_name) )
+      ;    #->search({}, {bind => [2]})
 }
 
 sub fetch {
     my ( $self, @bind_params ) = @_;
+    return $self->_resultset->search( {}, { bind => [@bind_params] } );
 }
 
 our $VERSION = '0.01';
@@ -68,6 +71,7 @@ DBIx::Class::Report - The great new DBIx::Class::Report!
 Version 0.01
 
 =cut
+
 =head1 SYNOPSIS
 
 Quick summary of what the module does.

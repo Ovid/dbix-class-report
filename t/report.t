@@ -21,7 +21,7 @@ load_database($dbh);
 
 make_schema_at(
     'Sample::DBIx::Class',
-    { debug => 1 },
+    {},    #    { debug => 1 },
     [ $dsn, '', '' ]
 );
 
@@ -58,6 +58,7 @@ my $sales_per_customers = DBIx::Class::Report->new(
 #}
 
 my $resultset = $sales_per_customers->fetch(2);
+is $resultset->count, 2, 'We should have two matching records from our resultset';
 
 done_testing;
 
