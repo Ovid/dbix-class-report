@@ -4,6 +4,37 @@ Create arbitrary DBIx::Class resultsets on the fly.
 
 Note that this doesn't work yet. This is here so I can share it.
 
+DESCRIPTION
+
+Throw arbitrary SQL at DBIx::Class and get a resultset back.
+
+    my $sql = <<'SQL';
+      SELECT var.name, ce.event_type, count(*)
+        FROM tracking_conversion_event ce
+        JOIN tracking_visitor visitor      ON visitor.tracking_visitor_id      = ce.tracking_visitor_id
+        JOIN tracking_version_variant curr ON curr.tracking_version_variant_id = visitor.tracking_version_variant_id
+        JOIN tracking_version ver          ON ver.tracking_version_id          = curr.tracking_version_id
+        JOIN tracking_variant var          ON var.tracking_variant_id          = curr.tracking_variant_id
+       WHERE ver.tracking_id = ?
+         AND ver.version     = ?
+    GROUP BY 1, 2
+    SQL
+   
+    my $events_per_name = DBIx::Class::Report->new(
+       schema  => $schema,
+       sql     => $sql,
+       columns => [qw/name event_type total/],
+    );
+   
+    my $resultset = $events_per_name->fetch( $tracking_id, $version );
+    say $resultset->count; # yeah, it behaves just like a normal dbic resultset
+   
+    while ( my $result = $resultset->next ) {
+       say $result->name;
+       say $result->event_type;
+       say $result->total;
+    }
+
 INSTALLATION
 
 To install this module, run the following commands:
