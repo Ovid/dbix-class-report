@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 BEGIN {
     $ENV{SCHEMA_LOADER_BACKCOMPAT} = 1;
-#    $ENV{DBIC_TRACE}               = 1;
+
+    #    $ENV{DBIC_TRACE}               = 1;
 }
 
 use strict;
@@ -56,7 +57,7 @@ SQL
 
 my $schema = Sample::DBIx::Class->connect( sub {$dbh} );
 my $sales_per_customers = DBIx::Class::Report->new(
-    columns => [qw/name total_orders/],
+    columns => [qw/name total/],
     sql     => $report_sql,
     schema  => $schema,
 );
@@ -79,12 +80,17 @@ $resultset = $sales_per_customers->fetch(3);
 is $resultset->count, 1,
   '... and we should be able to call fetch() again with different arguments';
 
+my $result = $resultset->single;
+is $result->name,  'Alice', '... and get the correct name';
+is $result->total, 3,       '... and the correct total';
 
 TODO: {
     local $TODO = 'Why the heck is this fetch not throwing an exception?';
     explain
       "Maybe related to https://rt.cpan.org/Public/Bug/Display.html?id=29058";
-    throws_ok { $sales_per_customers->fetch( 3, 4 ) }
+
+    # calling ->search->first guarantees that the SQL is actually executed
+    throws_ok { $sales_per_customers->fetch()->search->first }
     qr/Wrong number of bind parameters/,
       'Calling fetch() with the wrong number of bind parameters should fail';
 }
