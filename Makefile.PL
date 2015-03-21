@@ -1,4 +1,4 @@
-ue 5.006;
+use 5.006;
 use strict;
 use warnings FATAL => 'all';
 use inc::Module::Install;
@@ -27,10 +27,12 @@ configure_requires(
 );
 
 build_requires(
-    'Test::More' => 0,
+    'Test::Most'                  => '0.33',
+    'DBIx::Class::Schema::Loader' => '0.07037',
 );
 
 requires(
+    'Moose'       => 2,
     'DBIx::Class' => '0.08210',
 );
 
