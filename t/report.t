@@ -22,7 +22,7 @@ my $dbh = DBI->connect(
     {   RaiseError                 => 1,
         AutoCommit                 => 1,
         sqlite_see_if_its_a_number => 1
-        , # :( https://metacpan.org/pod/DBD::SQLite#Functions-And-Bind-Parameters ,
+        , # https://metacpan.org/pod/DBD::SQLite#Functions-And-Bind-Parameters ,
     }
 );
 
@@ -73,6 +73,21 @@ is 0 + $dbh, 0 + $resultset->result_source->storage->dbh,
 
 is $resultset->count, 2,
   'We should have two matching records from our resultset';
+
+$resultset = $sales_per_customers->fetch(3);
+
+is $resultset->count, 1,
+  '... and we should be able to call fetch() again with different arguments';
+
+
+TODO: {
+    local $TODO = 'Why the heck is this fetch not throwing an exception?';
+    explain
+      "Maybe related to https://rt.cpan.org/Public/Bug/Display.html?id=29058";
+    throws_ok { $sales_per_customers->fetch( 3, 4 ) }
+    qr/Wrong number of bind parameters/,
+      'Calling fetch() with the wrong number of bind parameters should fail';
+}
 
 done_testing;
 
