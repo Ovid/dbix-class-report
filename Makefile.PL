@@ -29,11 +29,14 @@ configure_requires(
 build_requires(
     'Test::Most'                  => '0.33',
     'DBIx::Class::Schema::Loader' => '0.07037',
+    'DBD::SQLite'                 => '1.42',
 );
 
 requires(
-    'Moose'       => 2,
-    'DBIx::Class' => '0.08210',
+    'Moose'                => '2',
+    'DBIx::Class'          => '0.08210',
+    'Digest::MD5'          => '2',
+    'namespace::autoclean' => '0.20',
 );
 
 install_as_cpan;
