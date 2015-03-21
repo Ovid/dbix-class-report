@@ -95,30 +95,31 @@ your SQL on the fly and generate ad-hoc, read-only dbic resultsets which act
 just like normal dbic objects.
 
     my $sql = <<'SQL';
-    SELECT var.name, ce.event_type, count(*)
-      FROM tracking_conversion_event ce
-      JOIN tracking_visitor visitor      ON visitor.tracking_visitor_id      = ce.tracking_visitor_id
-      JOIN tracking_version_variant curr ON curr.tracking_version_variant_id = visitor.tracking_version_variant_id
-      JOIN tracking_version ver          ON ver.tracking_version_id          = curr.tracking_version_id
-      JOIN tracking_variant var          ON var.tracking_variant_id          = curr.tracking_variant_id
-     WHERE ver.tracking_id = ?
-       AND ver.version     = ?
- GROUP BY 1, 2
- SQL
+      SELECT var.name, ce.event_type, count(*)
+        FROM tracking_conversion_event ce
+        JOIN tracking_visitor visitor      ON visitor.tracking_visitor_id      = ce.tracking_visitor_id
+        JOIN tracking_version_variant curr ON curr.tracking_version_variant_id = visitor.tracking_version_variant_id
+        JOIN tracking_version ver          ON ver.tracking_version_id          = curr.tracking_version_id
+        JOIN tracking_variant var          ON var.tracking_variant_id          = curr.tracking_variant_id
+       WHERE ver.tracking_id = ?
+         AND ver.version     = ?
+    GROUP BY 1, 2
+    SQL
 
- my $events_per_name = DBIx::Class::Report->new(
-    schema  => $schema,
-    sql     => $sql,
-    columns => [qw/name event_type total/],
- );
+    my $events_per_name = DBIx::Class::Report->new(
+       schema  => $schema,
+       sql     => $sql,
+       columns => [qw/name event_type total/],
+    );
 
- my $resultset = $events_per_name->fetch( $tracking_id, $version );
+    my $resultset = $events_per_name->fetch( $tracking_id, $version );
+    say $resultset->count; # yeah, it behaves just like a normal dbic resultset
 
- while ( my $result = $resultset->next ) {
-    say $result->name;
-    say $result->event_type;
-    say $result->total;
- }
+    while ( my $result = $resultset->next ) {
+       say $result->name;
+       say $result->event_type;
+       say $result->total;
+    }
 
 =head1 AUTHOR
 
@@ -126,12 +127,8 @@ Curtis "Ovid" Poe, C<< <ovid at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-dbix-class-report at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=DBIx-Class-Report>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
-
-
+Please report any bugs or feature requests to through the web interface at
+L<https://github.com/Ovid/dbix-class-report/issues>.
 
 =head1 SUPPORT
 
@@ -139,14 +136,13 @@ You can find documentation for this module with the perldoc command.
 
     perldoc DBIx::Class::Report
 
-
 You can also look for information at:
 
 =over 4
 
-=item * RT: CPAN's request tracker (report bugs here)
+=item * Bugs
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBIx-Class-Report>
+L<https://github.com/Ovid/dbix-class-report/issues>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
@@ -162,9 +158,7 @@ L<http://search.cpan.org/dist/DBIx-Class-Report/>
 
 =back
 
-
 =head1 ACKNOWLEDGEMENTS
-
 
 =head1 LICENSE AND COPYRIGHT
 
