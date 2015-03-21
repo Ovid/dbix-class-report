@@ -13,13 +13,10 @@ perl_version 5.006;
 tests_recursive('t');
 
 resources(
-    #homepage   => 'http://yourwebsitehere.com',
-    #IRC        => 'irc://irc.perl.org/#DBIx-Class-Report',
-    license => 'http://www.perlfoundation.org/artistic_license_2_0',
-
-    #repository => 'git://github.com/Curtis "Ovid" Poe/DBIx-Class-Report.git',
-    bugtracker =>
-      'http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBIx-Class-Report',
+    homepage   => 'https://github.com/Ovid/dbix-class-report',
+    license    => 'http://www.perlfoundation.org/artistic_license_2_0',
+    repository => 'https://github.com/Ovid/dbix-class-report',
+    bugtracker => 'https://github.com/Ovid/dbix-class-report/issues',
 );
 
 configure_requires(
