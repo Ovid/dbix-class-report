@@ -60,9 +60,13 @@ my $sales_per_customers = DBIx::Class::Report->new(
     columns => [qw/name total/],
     sql     => $report_sql,
     schema  => $schema,
+    methods => {
+        reversed_name =>
+          sub { my $self = shift; return scalar reverse $self->name },
+    },
 );
 
-#my $customer_rs = $schema->resultset('Customers');
+my $customer_rs = $schema->resultset('Customers');
 #while ( my $customer = $customer_rs->next ) {
 #    diag $customer->name;
 #}
@@ -83,6 +87,8 @@ is $resultset->count, 1,
 my $result = $resultset->single;
 is $result->name,  'Alice', '... and get the correct name';
 is $result->total, 3,       '... and the correct total';
+is $result->reversed_name, 'ecilA',
+  '... and we can add arbitrary methods to the result objects';
 
 TODO: {
     local $TODO = 'Why the heck is this fetch not throwing an exception?';

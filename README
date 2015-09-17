@@ -4,7 +4,8 @@ Create arbitrary DBIx::Class resultsets on the fly.
 
 DESCRIPTION
 
-Throw arbitrary SQL at DBIx::Class and get a resultset back.
+Throw arbitrary SQL at DBIx::Class and get a resultset back, including custom
+methods, if needed.
 
     my $sql = <<'SQL';
       SELECT var.name, ce.event_type, count(*)
@@ -22,6 +23,15 @@ Throw arbitrary SQL at DBIx::Class and get a resultset back.
        schema  => $schema,
        sql     => $sql,
        columns => [qw/name event_type total/],
+       methods => {
+           tracking_version => sub {
+              my $self = shift;
+              return $self->result_source->schema->resultset('TrackingVersion')->find($self->tracking_version_id);
+           },
+           tracking_variant => sub {
+              my $self = shift;
+              return $self->result_source->schema->resultset('TrackingVersion')->find($self->tracking_variant_id);
+           },
     );
    
     my $resultset = $events_per_name->fetch( $tracking_id, $version );
@@ -31,6 +41,8 @@ Throw arbitrary SQL at DBIx::Class and get a resultset back.
        say $result->name;
        say $result->event_type;
        say $result->total;
+       my $tracking_version = $result->tracking_version;
+       ...
     }
 
 INSTALLATION

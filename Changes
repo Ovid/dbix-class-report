@@ -1,5 +1,8 @@
 Revision history for DBIx-Class-Report
 
+0.02    2015-09-17
+        Add aribtrary methdods to each result object returned.
+
 0.01    2015-03-21
         Build DBIx::Class resultsets from arbitrary SQL
 

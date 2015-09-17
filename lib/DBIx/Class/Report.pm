@@ -5,7 +5,7 @@ use Carp;
 use Digest::MD5 qw/md5_hex/;
 use namespace::autoclean;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 has 'columns' => (
     is       => 'ro',
@@ -24,6 +24,14 @@ has 'schema' => (
     isa      => 'DBIx::Class::Schema',
     required => 1,
 );
+
+has 'methods' => (
+    is       => 'ro',
+    isa      => 'HashRef[CodeRef]',
+    default  => sub { {} },
+    required => 0,
+);
+
 has '_resultset' => (
     is  => 'rw',
     isa => 'DBIx::Class::ResultSet',
@@ -33,10 +41,10 @@ sub BUILD {
     my $self         = shift;
     my $schema_class = ref $self->schema;   # XXX There has to be a better way
 
-    my $md5             = md5_hex( $self->sql );
-    my $table           = "table_$md5";
-    my $source_name     = "View$md5";
-    my $view_class      = $schema_class . "::$source_name";
+    my $md5         = md5_hex( $self->sql );
+    my $table       = "table_$md5";
+    my $source_name = "View$md5";
+    my $view_class  = $schema_class . "::$source_name";
 
     # XXX Again, I'll figure out something better after this hack
     eval <<"END_VIEW";
@@ -52,7 +60,16 @@ END_VIEW
     $view_class->result_source_instance->view_definition( $self->sql );
 
     $self->schema->register_class( $source_name => $view_class );
-    $self->_resultset($self->schema->resultset($source_name));
+    $self->_resultset( $self->schema->resultset($source_name) );
+    $self->_add_methods($view_class);
+}
+
+sub _add_methods {
+    my ( $self, $view_class ) = @_;
+    while ( my ( $name, $body ) = each %{ $self->methods } ) {
+        no strict 'refs';
+        *{ $view_class . '::' . $name } = $body;
+    }
 }
 
 sub fetch {
@@ -78,6 +95,10 @@ Version 0.01
         schema  => $dbic_schema_object,
         sql     => $complicated_sql,
         columns => \@accessor_names,
+        methods => {
+            method1 => sub { ... },
+            method1 => sub { ... },
+        },
     );
     my $resultset = $report->fetch(@bind_params_for_complicated_sql);
     while ( my $result = $resultset->next ) {
@@ -110,6 +131,15 @@ just like normal dbic objects.
        schema  => $schema,
        sql     => $sql,
        columns => [qw/name event_type total/],
+       methods => {
+           tracking_version => sub {
+              my $self = shift;
+              return $self->result_source->schema->resultset('TrackingVersion')->find($self->tracking_version_id);
+           },
+           tracking_variant => sub {
+              my $self = shift;
+              return $self->result_source->schema->resultset('TrackingVersion')->find($self->tracking_variant_id);
+           },
     );
 
     my $resultset = $events_per_name->fetch( $tracking_id, $version );
@@ -120,6 +150,10 @@ just like normal dbic objects.
        say $result->event_type;
        say $result->total;
     }
+
+Note that the C<methods> key installs methods in each returned result object.
+This allows us to neatly similate inflation or anthing else we need from a
+standard result object.
 
 =head1 AUTHOR
 
