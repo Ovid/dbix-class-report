@@ -57,9 +57,10 @@ SQL
 
 my $schema = Sample::DBIx::Class->connect( sub {$dbh} );
 my $sales_per_customers = DBIx::Class::Report->new(
-    columns => [qw/name total/],
+    columns => ['name', 'total' => { data_type => 'integer' }],
     sql     => $report_sql,
     schema  => $schema,
+    base_class => 'Test::ReportBaseClass',
     methods => {
         reversed_name =>
           sub { my $self = shift; return scalar reverse $self->name },
@@ -89,6 +90,9 @@ is $result->name,  'Alice', '... and get the correct name';
 is $result->total, 3,       '... and the correct total';
 is $result->reversed_name, 'ecilA',
   '... and we can add arbitrary methods to the result objects';
+
+is $result->_test_base_class => 'base class',
+    "Should have created the object with the correct base class";
 
 TODO: {
     local $TODO = 'Why the heck is this fetch not throwing an exception?';
@@ -150,3 +154,8 @@ SQL
         "INSERT INTO orders (customer_id) SELECT customer_id FROM customers WHERE name = 'Charline'"
     );
 }
+
+package Test::ReportBaseClass;
+use parent 'DBIx::Class::Core';
+
+sub _test_base_class { "base class" }

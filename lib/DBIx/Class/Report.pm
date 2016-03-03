@@ -9,7 +9,7 @@ our $VERSION = '0.02';
 
 has 'columns' => (
     is       => 'ro',
-    isa      => 'ArrayRef[Str]',
+    isa      => 'ArrayRef[Str|HashRef]',
     required => 1,
 );
 
@@ -32,6 +32,12 @@ has 'methods' => (
     required => 0,
 );
 
+has 'base_class' => (
+    is       => 'ro',
+    isa      => 'Str',
+    default  => 'DBIx::Class::Core'
+);
+
 has '_resultset' => (
     is  => 'rw',
     isa => 'DBIx::Class::ResultSet',
@@ -47,9 +53,10 @@ sub BUILD {
     my $view_class  = $schema_class . "::$source_name";
 
     # XXX Again, I'll figure out something better after this hack
+    my $base_class = $self->base_class;
     eval <<"END_VIEW";
 package $view_class;
-use base 'DBIx::Class::Core';
+use base '$base_class';
 END_VIEW
     croak $@ if $@;
 
@@ -154,6 +161,28 @@ just like normal dbic objects.
 Note that the C<methods> key installs methods in each returned result object.
 This allows us to neatly similate inflation or anthing else we need from a
 standard result object.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item * columns - An array ref of values which will get passed to
+C<DBIx::Class::ResultSet::add_columns> - may be a flat list of column names, or
+also contain column specification hashes.
+
+=item * sql - The SQL with placeholders
+
+=item * schema - A C<DBIx::Class::Schema> instance
+
+=item * methods - A HashRef of optional subroutines to be added to the ::Result
+namespace for the virtual view.
+
+=item * base_class - The base class for the ::Result namespace for the virtual
+view
+
+=back
+
+=cut
 
 =head1 AUTHOR
 
