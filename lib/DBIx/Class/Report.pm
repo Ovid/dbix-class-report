@@ -38,19 +38,37 @@ has 'base_class' => (
     default  => 'DBIx::Class::Core'
 );
 
+has 'view_class' => (
+    is       => 'ro',
+    isa      => 'Str',
+    lazy     => 1,
+    default  => sub {
+        my ($self) = @_;
+        my $schema_class = ref $self->schema;   # XXX There has to be a better way
+        return $schema_class . '::' . $self->_source_name;
+    }
+);
+
 has '_resultset' => (
     is  => 'rw',
     isa => 'DBIx::Class::ResultSet',
 );
 
-sub BUILD {
-    my $self         = shift;
-    my $schema_class = ref $self->schema;   # XXX There has to be a better way
+has '_source_name' => (
+    is      => 'ro',
+    isa     => 'Str',
+    lazy    => 1,
+    default => sub {
+        my ($self) = @_;
+        my $md5 = md5_hex( $self->sql );
+        return "View$md5";
+    }
+);
 
-    my $md5         = md5_hex( $self->sql );
-    my $table       = "table_$md5";
-    my $source_name = "View$md5";
-    my $view_class  = $schema_class . "::$source_name";
+sub BUILD {
+    my $self = shift;
+
+    my $view_class = $self->view_class;
 
     # XXX Again, I'll figure out something better after this hack
     my $base_class = $self->base_class;
@@ -61,13 +79,13 @@ END_VIEW
     croak $@ if $@;
 
     $view_class->table_class('DBIx::Class::ResultSource::View');
-    $view_class->table($table);
+    $view_class->table($self->_source_name);
     $view_class->add_columns( @{ $self->columns } );
     $view_class->result_source_instance->is_virtual(1);
     $view_class->result_source_instance->view_definition( $self->sql );
 
-    $self->schema->register_class( $source_name => $view_class );
-    $self->_resultset( $self->schema->resultset($source_name) );
+    $self->schema->register_class( $self->_source_name => $view_class );
+    $self->_resultset( $self->schema->resultset($self->_source_name) );
     $self->_add_methods($view_class);
 }
 
@@ -179,6 +197,9 @@ namespace for the virtual view.
 
 =item * base_class - The base class for the ::Result namespace for the virtual
 view
+
+=item * view_class - The name of the class that has been auto-generated fro
+this view
 
 =back
 
