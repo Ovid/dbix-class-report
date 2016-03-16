@@ -119,7 +119,7 @@ Version 0.01
     my $report = DBIx::Class::Report->new(
         schema  => $dbic_schema_object,
         sql     => $complicated_sql,
-        columns => \@accessor_names,
+        columns => \@columns_spec,     # same as __PACKAGE__->add_columns()
         methods => {
             method1 => sub { ... },
             method1 => sub { ... },
