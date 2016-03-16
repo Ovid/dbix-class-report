@@ -5,7 +5,7 @@ use Carp;
 use Digest::MD5 qw/md5_hex/;
 use namespace::autoclean;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 has 'columns' => (
     is       => 'ro',
@@ -198,7 +198,7 @@ namespace for the virtual view.
 =item * base_class - The base class for the ::Result namespace for the virtual
 view
 
-=item * view_class - The name of the class that has been auto-generated fro
+=item * view_class - The name of the class that has been auto-generated for
 this view
 
 =back
